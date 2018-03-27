@@ -7,8 +7,8 @@ func('我现在在使用Babel!'); */
 import React from "react";
 import ReactDom from 'react-dom';
 import Hello from './components/Hello/Hello.js';
-import getRouter from './router/router.js';
+import GetRouter from './router/router';
 
 ReactDom.render(
-    <Hello />,document.getElementById('app')
+    <GetRouter />,document.getElementById('app')
 )
