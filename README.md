@@ -387,22 +387,88 @@ export default class Home extends Component{
 import React from "react";
 import ReactDom from 'react-dom';
 // import Hello from './components/Hello/Hello.js';
-import getRouter from './router/router.js';
+import GetRouter from './router/router.js';
 
 ReactDom.render(
-    <getRouter />,document.getElementById('app')
+    <GetRouter />,document.getElementById('app')
 )
 ```
 
+打开`index.html`,如下
 
+![1522238157414](C:\Users\vipga\AppData\Local\Temp\1522238157414.png)
+
+但是点击 首页 和 关于 都没反应。因为我们之前是使用绝对路径去访问的`index.html`,类似上图。不是我们想象中的路由的路径`http://localhost:8040`。所以我们需要配置一个简单的WEB服务器来指向`index.html`.
+
+有两种方法来实现
+
+1、使用`Nginx`,`Apache`,`IIS`等配置启动
+
+2、使用`webpack-dev-server`来配置
 
 #### webpack-dev-server
 
+简单来说，`webpack-dev-server`就是一个小型的静态文件服务器。使用它，可以为`webpack`打包生成的资源文件提供Web服务。
 
+首先安装
+
+`yarn add webpack-dev-server --dev`
+
+修改`webpack.config.js`,增加`webpack-dev-server`的配置
+
+```js
+devServer: {
+        contentBase: path.join(__dirname, './dist')
+}
+```
+
+现在可以执行命令
+
+`webpack-dev-server ---config webpack.config.js`
+
+此时，我们可以在`package.json`,添加一条script，
+
+`"start": "webpack-dev-server ---config webpack.config.js"`
+
+之后就可以直接使用`yarn start`指令来启动服务。
+
+可以看到类似下面的信息，启动的服务默认端口是8080端口
+
+![1522240148770](C:\Users\vipga\AppData\Local\Temp\1522240148770.png)
+
+用浏览器访问`http://localhots:8080`，可以看到类似下面的，此时点击菜单，就可以到想去的页面啦~
+
+![1522240340170](C:\Users\vipga\AppData\Local\Temp\1522240340170.png)![1522240352414](C:\Users\vipga\AppData\Local\Temp\1522240352414.png)
+
+关于`webpack-dev-server`的详细介绍，可以参见  [链接1](https://segmentfault.com/a/1190000006670084) [链接2](https://segmentfault.com/a/1190000006964335)
+
+`conten-base`是设定`webpack-dev-server`伺服的`directory`。如果不进行设定的话，默认是在当前目录下。告诉服务器从哪里提供内容。只有在你想要提供静态文件时才需要。
+
+更多关于`webpack-dev-server`的配置，可参见官网文档[devServer](https://doc.webpack-china.org/configuration/dev-server/).
+
+然后对`webpack-dev-server`的配置进行修改:
+
+```js
+devServer: {
+        contentBase: path.join(__dirname, './dist'),
+        port: 8080,
+        historyApiFallback: true
+    }
+```
+
+`"start": "webpack-dev-server ---config webpack.config.js --color --progress"`
+
+**[注意]：你启动webpack-dev-server后，你在目标文件夹中是看不到编译后的文件的,实时编译后的文件都保存到了内存当中。因此很多同学使用webpack-dev-server进行开发的时候都看不到编译后的文件**
 
 #### HMR()
 
 
+
+#### redux
+
+
+
+#### 
 
 
 

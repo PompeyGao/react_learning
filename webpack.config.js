@@ -20,7 +20,9 @@ module.exports = {
         path: path.resolve(__dirname, 'dist')
     }, 
     devServer: {
-        contentBase: path.join(__dirname, './dist')
+        contentBase: path.join(__dirname, './dist'),
+        port: 8080,
+        historyApiFallback: true
     },
     /*src文件夹下面的以.js结尾的文件，要使用babel解析*/
     /*cacheDirectory是用来缓存编译结果，下次编译加速*/
