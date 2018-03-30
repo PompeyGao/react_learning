@@ -460,7 +460,7 @@ devServer: {
 
 **[注意]：你启动webpack-dev-server后，你在目标文件夹中是看不到编译后的文件的,实时编译后的文件都保存到了内存当中。因此很多同学使用webpack-dev-server进行开发的时候都看不到编译后的文件**
 
-#### HMR()
+#### 模块热替换（Hot Module Replacement）
 
 
 
