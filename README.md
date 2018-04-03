@@ -462,6 +462,148 @@ devServer: {
 
 #### 模块热替换（Hot Module Replacement）
 
+到目前，当我们修改代码的时候，浏览器会自动刷新页面。
+
+接下来我们要进行修改，使页面只会更新修改的那一部分，而不是整个页面。
+
+1、首先在`package.json`中添加 `--hot`
+
+```js
+"start": "webpack-dev-server --config webpack.config.js --color --hot"
+```
+
+2、然后在`src/index.js`中进行修改。增加`module.hot.accept()`,如下。当模块更新的时候，通知`index.js`。
+
+```react
+import React from "react";
+import ReactDom from 'react-dom';
+// import Hello from './components/Hello/Hello.js';
+import getRouter from './router/router';
+
+if(module.hot){
+    module.hot.accept();
+}
+
+ReactDom.render(
+    getRouter(),document.getElementById('app')
+)
+```
+
+现在我们进行修改home.js或者其他文件，可以发现在页面不刷新的情况下，页面内容发生了改变。
+
+但是上面的配置对`react`模块的支持不是很好。
+
+例如下面的`demo`，当模块热替换的时候，`state`会重置，这不是我们想要的。
+
+修改`Home.js`,增加计数`state`
+
+```react
+import React, { Component } from "react";
+
+export default class Home extends Component{
+
+    constructor(props){
+        super(props);
+        this.state = {
+            count: 0
+        }
+    }
+
+    _handleClick(){
+        this.setState({
+            count: ++this.state.count
+        })
+    }
+
+    render(){
+        const{
+            count
+        } = this.state;
+
+        return(
+            <div>
+                首页欢迎你.~~~~<br/>
+                当前计数：{count} <br/>
+                <button onClick={() => this._handleClick()}> 加1s</button>
+            </div>
+        )
+    }
+}
+```
+
+你可以测试一下，当我们修改代码的时候，`webpack`在更新页面的时候，也把`count`初始为0了。
+
+为了在`react`模块更新的同时，能保留`state`等页面中其他状态，我们需要引入[react-hot-loader](https://github.com/gaearon/react-hot-loader)~
+
+Q:　请问`webpack-dev-server`与`react-hot-loader`两者的热替换有什么区别？
+
+A: 区别在于`webpack-dev-serve`r自己的`--hot`模式只能即时刷新页面，但状态保存不住。因为`React`有一些自己语法(JSX)是`HotModuleReplacementPlugin`搞不定的。
+而`react-hot-loader`在`--hot`基础上做了额外的处理，来保证状态可以存下来。（来自[segmentfault](https://segmentfault.com/q/1010000005612845)）
+
+下面我们来加入`react-hot-loader `,
+
+安装依赖
+
+`yarn add react-hot-loader --dev`
+
+根据[文档](https://gaearon.github.io/react-hot-loader/getstarted/)，我们要做如下几个修改~
+
+1、首先要在`.babelrc`中进行添加 
+
+```json
+{
+    "presets": [
+        "es2015",
+        "react",
+        "stage-0"
+    ],
+    "plugins": [
+        "react-hot-loader/babel"
+    ]
+}
+```
+
+2、在`webpack.config.js`中
+
+```json
+entry: [
+        'react-hot-loader/patch',
+        path.join(__dirname, 'src/index.js')
+    ],
+```
+
+3、在`src/index.js`中
+
+```react
+import React from "react";
+import ReactDom from 'react-dom';
+import { AppContainer } from 'react-hot-loader';
+// import Hello from './components/Hello/Hello.js';
+import getRouter from './router/router';
+
+const render = Component => {
+    ReactDom.render(
+        <AppContainer>
+            {Component}
+        </AppContainer>,
+        document.getElementById('app')
+    );
+}
+
+/**初始化 */
+render(getRouter());
+
+/**热更新 */
+if (module.hot) {
+    module.hot.accept('./router/router', () => {
+        const NextGetRouter = require('./router/router').default;
+        render(NextGetRouter())
+    });
+}
+```
+
+目前仍然有点问题，待解决...
+
 
 
 #### redux

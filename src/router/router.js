@@ -12,10 +12,10 @@ const getRouter = () => {
             <div>
                 <ul>
                     <li>
-                        <Link to="">首页</Link>
+                        <Link to="">首 页</Link>
                     </li>
                     <li>
-                        <Link to="/about">关于</Link>
+                        <Link to="/about">关 于</Link>
                     </li>
                 </ul>
                 <Switch>

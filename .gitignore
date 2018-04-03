@@ -11,7 +11,7 @@
 #/jsconfig.json
 
 # production
-/dist
+#/dist
 
 # misc
 .DS_Store
