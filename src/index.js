@@ -8,7 +8,7 @@ import React from "react";
 import ReactDom from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
 // import Hello from './components/Hello/Hello.js';
-import getRouter from './router/router';
+import getRouter from 'router/router';
 
 const render = Component => {
     ReactDom.render(

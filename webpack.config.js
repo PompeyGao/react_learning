@@ -27,6 +27,16 @@ module.exports = {
         port: 8080,
         historyApiFallback: true
     },
+    resolve: {
+        alias: {
+            containers: path.join(__dirname, 'src/containers'),
+            component: path.join(__dirname, 'src/component'),
+            router: path.join(__dirname, 'src/router'),
+            redux: path.join(__dirname, 'src/redux'),
+            actions: path.join(__dirname, 'src/redux/actions'),
+            reducers: path.join(__dirname, 'src/redux/reducers')
+        }
+    },
     /*src文件夹下面的以.js||.jsx结尾的文件，要使用babel解析*/
     /*cacheDirectory是用来缓存编译结果，下次编译加速*/
     module: {
