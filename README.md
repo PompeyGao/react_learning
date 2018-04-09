@@ -606,9 +606,316 @@ if (module.hot) {
 
 
 
+#### 文件路径优化
+
+之前写的代码中，我们引用其他文件时，写的都是相对路径。
+
+比如`src/router/router.js`中，
+
+```js
+import Home from '../containers/Home/Home.js';
+import About from '../containers/About/About.js';
+```
+
+webpack提供了一个别名配置，就是我们无论在哪个路径下，引用都可以这样使用
+
+```js
+import Home from 'containers/Home/Home.js';
+import About from 'containers/About/About.js';
+```
+
+同样，再`src/index.js`中修改
+
+```js
+import getRouter from 'router/router';
+```
+
 #### redux
 
+接下来，要在项目中集成`redux`.
 
+要对`redux`有一个大概的认识，可以阅读阮一峰前辈的[Redux 入门教程（一）：基本用法](http://www.ruanyifeng.com/blog/2016/09/redux_tutorial_part_one_basic_usages.html)
+
+如果要对`redux`有一个非常详细的认识，我推荐阅读[中文文档](http://cn.redux.js.org/index.html)，写的非常好。读了这个教程，有一个非常深刻的感觉，`redux`并没有任何魔法。
+
+**不要被各种关于 reducers, middleware, store 的演讲所蒙蔽 ---- Redux 实际是非常简单的。**
+
+当然，我这篇文章是写给新手的，如果看不懂上面的文章，或者不想看，没关系。先会用，多用用就知道原理了。
+
+开始整代码！我们就做一个最简单的计数器。自增，自减，重置。
+
+安装	`redux`
+
+`yarn add redux --dev`
+
+初始化目录结构
+
+```
+cd src && mkdir redux
+cd redux && mkdir actions && mkdir reducers
+touch reducers.js && touch store.js
+touch actions/counter.js && touch reducers/counter.js
+```
+
+先来写`action`创建函数。**通过action创建函数，可以创建action~**
+`src/redux/actions/counter.js`
+
+```js
+/**action */
+export const INCREMENT = "counter/INCREMENT";
+export const DECREMENT = "counter/DECREMENT";
+export const RESET = "counter/RESET";
+
+export function increment(){
+    return {
+        type: INCREMENT
+    }
+}
+
+export function decrement() {
+    return {
+        type: DECREMENT
+    }
+}
+
+export function reset() {
+    return {
+        type: RESET
+    }
+}
+```
+
+再来写`reducer`,**reducer是一个纯函数，接收action和旧的state,生成新的state.**
+
+`src/redux/reducers/counter.js`
+
+```jsx
+import { INCREMENT, DECREMENT, RESET } from '../actions/counter';
+
+/**初始化state */
+const initState ={
+    count: 0
+};
+
+/**reducer */
+export default function reducer(state = initState, action) {
+    switch (action.type) {
+        case INCREMENT:
+            return{
+                count: state.count + 1
+            };
+            break;
+        case DECREMENT:
+            return {
+                count: state.count - 1
+            };
+            break;
+        case RESET:
+            return {
+                count: 0
+            };
+            break;
+        default:
+            return state
+            break;
+    }
+}
+```
+
+一个项目有很多的`reducers`,我们要把他们整合到一起
+
+`src/redux/reducers.js`
+
+```js
+import counter from './reducers/counter';
+
+export default function combineReducers(state = {}, action) {
+    return {
+        counter: counter(state.counter, action)
+    }
+}
+```
+
+到这里，我们必须再理解下一句话。
+
+**reducer就是纯函数，接收state 和 action，然后返回一个新的 state。**
+
+看看上面的代码，无论是`combineReducers`函数也好，还是`reducer`函数也好，都是接收`state`和`action`，
+返回更新后的`state`。区别就是`combineReducers`函数是处理整棵树，`reducer`函数是处理树的某一点。
+
+接下来，我们要创建一个`store`。
+
+前面我们可以使用 `action` 来描述“发生了什么”，使用`action`创建函数来返回`action`。
+
+还可以使用 `reducers` 来根据 `action` 更新 `state` 。
+
+那我们如何提交`action`？提交的时候，怎么才能触发`reducers`呢？
+
+`store` 就是把它们联系到一起的对象。`store` 有以下职责：
+
+- 维持应用的 `state`；
+- 提供 `getState()` 方法获取 `state`；
+- 提供 `dispatch(action)` 触发`reducers`方法更新 `state`；
+- 通过`subscribe(listener)` 注册监听器;
+- 通过 `subscribe(listener)` 返回的函数注销监听器。
+
+`src/redux/store.js`
+
+```js
+import {createStore} from 'redux';
+import combineReducers from './reducers.js';
+
+let store = createStore(combineReducers);
+
+export default store;
+```
+
+到现在为止，我们已经可以使用`redux`了~
+
+下面我们就简单的测试下
+
+```
+cd src/redux
+touch testRedux.js
+```
+
+`src/redux/testRedux.js`
+
+```js
+import { increment, decrement, reset } from "./actions/counter";
+import store from './store';
+
+/**打印初始状态 */
+console.log(store.getState());
+
+/**监听每次更新时，打印日志
+ * subscribe() 会返回一个用来注销监听器的函数
+ */
+let unsubcribe = store.subscribe(() => console.log(store.getState()));
+
+/**发起一系列 action */
+store.dispatch(increment());
+store.dispatch(decrement());
+store.dispatch(reset());
+
+/**停止监听state 更新 */
+unsubcribe();
+```
+
+当前文件夹(即`src/redux`)执行命令
+
+```
+webpack testRedux.js --output build.js
+node build.js
+```
+
+可以看到输出日志
+
+```json
+{ counter: { count: 0 } }
+{ counter: { count: 1 } }
+{ counter: { count: 0 } }
+{ counter: { count: 0 } }
+```
+
+做这个测试，就是为了告诉大家，`redux`和`react`没关系。
+
+到这里，我建议你再理下`redux`的数据流，看看[这里](http://cn.redux.js.org/docs/basics/DataFlow.html)。
+
+1. 调用`store.dispatch(action)`提交`action`。
+2. `redux store`调用传入的`reducer`函数。把当前的`state`和`action`传进去。
+3. 根 `reducer` 应该把多个子 `reducer` 输出合并成一个单一的 `state` 树。
+4. `Redux store` 保存了根 `reducer` 返回的完整 `state` 树。
+
+同样在`webpack.config.js`文件中添加文件别名，
+
+```json
+resolve: {
+        alias: {
+            containers: path.join(__dirname, 'src/containers'),
+            component: path.join(__dirname, 'src/component'),
+            router: path.join(__dirname, 'src/router'),
+            redux: path.join(__dirname, 'src/redux'),
+            actions: path.join(__dirname, 'src/redux/actions'),
+            reducers: path.join(__dirname, 'src/redux/reducers')
+        }
+    }
+```
+
+把前面写的对应的相对路径都改改。
+
+下面我们开始搭配`react`使用。
+
+写一个`Counter`页面
+
+```
+cd containers && mkdir Counter && touch Counter/Counter.js
+```
+
+`src/containers/Counter/Counter.js`
+
+```jsx
+import React, {Component} from 'react';
+
+export default class Counter extends Component {
+    render() {
+        return (
+            <div>
+                <div>当前计数为(显示redux计数)</div>
+                <button onClick={() => {
+                    console.log('调用自增函数');
+                }}>自增
+                </button>
+                <button onClick={() => {
+                    console.log('调用自减函数');
+                }}>自减
+                </button>
+                <button onClick={() => {
+                    console.log('调用重置函数');
+                }}>重置
+                </button>
+            </div>
+        )
+    }
+}
+```
+
+修改路由，增加`Counter`
+
+`src/router/router.js`
+
+```jsx
+import React from 'react';
+import {
+    BrowserRouter as Router,
+    Route,  Switch, Link
+} from 'react-router-dom';
+import Home from 'containers/Home/Home';
+import About from 'containers/About/About';
+import Counter from "containers/Counter/Counter";
+
+const getRouter = () => {
+    return (
+        <Router>
+            <div>
+                <ul>
+                    <li><Link to="">首 页</Link> </li>
+                    <li><Link to="/conuter">计 数 器</Link></li>
+                    <li><Link to="/about">关 于</Link></li>
+                </ul>
+                <Switch>
+                    <Route exact path="/" component={Home} />
+                    <Route path="/conuter" component={Counter} />
+                    <Route path="/about" component={About} />
+                </Switch>
+            </div>
+        </Router>
+    )
+}
+export default getRouter;
+```
+
+未完待续....
 
 #### 
 
