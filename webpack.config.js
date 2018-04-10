@@ -32,7 +32,7 @@ module.exports = {
             containers: path.join(__dirname, 'src/containers'),
             component: path.join(__dirname, 'src/component'),
             router: path.join(__dirname, 'src/router'),
-            redux: path.join(__dirname, 'src/redux'),
+            //redux: path.join(__dirname, 'src/redux'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
         }

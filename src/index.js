@@ -7,13 +7,17 @@ func('我现在在使用Babel!'); */
 import React from "react";
 import ReactDom from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
+import { Provider } from "react-redux";
+import store from './redux/store';
 // import Hello from './components/Hello/Hello.js';
 import getRouter from 'router/router';
 
 const render = Component => {
     ReactDom.render(
         <AppContainer>
-            {Component}
+            <Provider store={store}>
+                {Component}
+            </Provider>
         </AppContainer>,
         document.getElementById('app')
     );
