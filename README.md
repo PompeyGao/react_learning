@@ -835,7 +835,6 @@ resolve: {
             containers: path.join(__dirname, 'src/containers'),
             component: path.join(__dirname, 'src/component'),
             router: path.join(__dirname, 'src/router'),
-            redux: path.join(__dirname, 'src/redux'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
         }
@@ -915,9 +914,126 @@ const getRouter = () => {
 export default getRouter;
 ```
 
-未完待续....
+`yarn start`看看效果。
 
-#### 
+下一步，我们让`Counter`组件和`Redux`联合起来。使`Counter`能获得到`Redux`的`state`，并且能执行`action`。
+
+当然我们可以使用刚才测试`testRedux`的方法，手动监听~手动引入`store`~但是这肯定很麻烦哦。
+
+`react-redux`提供了一个方法`connect`。
+
+> 容器组件就是使用 store.subscribe() 从 Redux state 树中读取部分数据，并通过 props 来把这些数据提供给要渲染的组件。你可以手工来开发容器组件，但建议使用 React Redux 库的 connect() 方法来生成，这个方法做了性能优化来避免很多不必要的重复渲染。
+
+`connect`接收两个参数，一个`mapStateToProps`,就是把`redux`的`state`，转为组件的`Props`，还有一个参数是`mapDispatchToprops`,
+就是把执行`actions`的方法，转为`Props`属性函数。
+
+先安装`react-redux`
+
+`yarn add react-redux`
+
+`src/containers/Counter/Counter.js`
+
+```jsx
+import React, { Component } from "react";
+import { increment, decrement, reset } from "actions/counter";
+
+import { connect } from "react-redux";
+class Counter extends Component{
+    render(){
+        //console.log(this.props);
+        return (
+            <div>
+                <div>当前计数为({this.props.counter.count})</div>
+                <button onClick={() => this.props.increment()}>自增
+                </button>
+                <button onClick={() => this.props.decrement()}>自减
+                </button>
+                <button onClick={() => this.props.reset()}>重置
+                </button>
+            </div>
+        )
+    }
+}
+
+const mapStateToProps = (state) => {
+    return{
+        counter: state.counter
+    }
+};
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        increment: ()=> {
+            dispatch(increment())
+        },
+        decrement: () => {
+            dispatch(decrement())
+        },
+        reset:() => {
+            dispatch(reset())
+        }
+    }
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Counter);
+```
+
+下面我们要传入`store`
+
+> 所有容器组件都可以访问 Redux store，所以可以手动监听它。一种方式是把它以 props 的形式传入到所有容器组件中。但这太麻烦了，因为必须要用 store 把展示组件包裹一层，仅仅是因为恰好在组件树中渲染了一个容器组件。
+
+
+> 建议的方式是使用指定的 React Redux 组件`Provider `来 魔法般的 让所有容器组件都可以访问 store，而不必显示地传递它。只需要在渲染根组件时使用即可。
+
+`src/index.js`
+
+```jsx
+import React from "react";
+import ReactDom from 'react-dom';
+import { AppContainer } from 'react-hot-loader';
+import { Provider } from "react-redux";
+import store from './redux/store';
+// import Hello from './components/Hello/Hello.js';
+import getRouter from 'router/router';
+
+const render = Component => {
+    ReactDom.render(
+        <AppContainer>
+            <Provider store={store}>
+                {Component}
+            </Provider>
+        </AppContainer>,
+        document.getElementById('app')
+    );
+}
+
+/**初始化 */
+render(getRouter());
+
+/**热更新 */
+if (module.hot) {
+    module.hot.accept('./router/router.js', () => {
+        const NextGetRouter = require('./router/router').default;
+        render(NextGetRouter())
+    });
+}
+```
+
+到这里我们就可以执行`yarn start`，打开localhost:8080/counter看效果了。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
