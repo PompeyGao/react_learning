@@ -1,6 +1,6 @@
 
 
-#### init 项目
+## init 项目
 
 1. 创建并进入项目文件夹
 
@@ -30,7 +30,7 @@
 
    你可以回答这些问题，也可以直接一路回车使用默认配置或者留空。
 
-   #### webpack
+   ## webpack
 
    1. 安装webpack(这里安装的是最新的webpack版本4.1.1),
 
@@ -146,7 +146,7 @@
 
       用浏览器打开index.html，可以看到Hello Webpack.
 
-   #### 命令脚本
+   ## 命令脚本
 
    考虑到用 CLI 这种方式来运行本地的` webpack `不是特别方便，我们可以设置一个快捷方式。在 *package.json* 添加一个build脚本
 
@@ -160,7 +160,7 @@
 
    现在我们可以使用`yarn build_dev`来编译项目。
 
-   #### Babel
+   ## Babel
 
    > ​	                                                                                                                                                                                     Babel 把用最新标准编写的 JavaScript 代码向下编译成可以在今天随处可用的版本。 这一过程叫做“源码到源码”编译， 也被称为转换编译。
    >
@@ -238,7 +238,7 @@
 
    浏览器打开`index.html`,可以看到正确的输出:`我在测试Babel转译ES6!`.
 
-#### react
+## react
 
 1. 安装`react和react-dom`
 
@@ -294,7 +294,7 @@
 
    执行`yarn build_dev`，打开`dist/index.html`查看。
 
-#### react-router
+## react-router
 
 安装`react-router`
 
@@ -406,7 +406,7 @@ ReactDom.render(
 
 2、使用`webpack-dev-server`来配置
 
-#### webpack-dev-server
+## webpack-dev-server
 
 简单来说，`webpack-dev-server`就是一个小型的静态文件服务器。使用它，可以为`webpack`打包生成的资源文件提供Web服务。
 
@@ -460,7 +460,7 @@ devServer: {
 
 **[注意]：你启动webpack-dev-server后，你在目标文件夹中是看不到编译后的文件的,实时编译后的文件都保存到了内存当中。因此很多同学使用webpack-dev-server进行开发的时候都看不到编译后的文件**
 
-#### 模块热替换（Hot Module Replacement）
+## 模块热替换（Hot Module Replacement）
 
 到目前，当我们修改代码的时候，浏览器会自动刷新页面。
 
@@ -606,7 +606,7 @@ if (module.hot) {
 
 
 
-#### 文件路径优化
+## 文件路径优化
 
 之前写的代码中，我们引用其他文件时，写的都是相对路径。
 
@@ -630,7 +630,7 @@ import About from 'containers/About/About.js';
 import getRouter from 'router/router';
 ```
 
-#### redux
+## redux
 
 接下来，要在项目中集成`redux`.
 
@@ -1021,6 +1021,279 @@ if (module.hot) {
 
 到这里我们就可以执行`yarn start`，打开localhost:8080/counter看效果了。
 
+这里我们再缕下（可以读[React 实践心得：react-redux 之 connect 方法详解](http://taobaofed.org/blog/2016/08/18/react-redux-connect/)）
+
+1. `Provider`组件是让所有的组件可以访问到`store`。不用手动去传。也不用手动去监听。
+
+2. `connect`函数作用是从 `Redux state` 树中读取部分数据，并通过 props 来把这些数据提供给要渲染的组件。也传递`dispatch(action)`函数到`props`。
+
+   react-redux 提供了两个重要的对象，`Provider` 和 `connect`，前者使 React 组件可被连接（connectable），后者把 React 组件和 Redux 的 store 真正连接起来。
+
+接下来，我们要说异步`action`
+
+参考地址： [http://cn.redux.js.org/docs/advanced/AsyncActions.html](http://cn.redux.js.org/docs/advanced/AsyncActions.html)
+
+想象一下我们调用一个异步`get`请求去后台请求数据：
+
+1. 请求开始的时候，界面转圈提示正在加载。`isLoading`置为`true`。
+2. 请求成功，显示数据。`isLoading`置为`false`,`data`填充数据。
+3. 请求失败，显示失败。`isLoading`置为`false`，显示错误信息。
+
+下面，我们以向后台请求用户基本信息为例。
+
+1.我们先创建一个`user.json`，等会请求用，相当于后台的API接口。
+
+```
+cd dist && mkdir api
+cd api && touch user.json
+```
+
+`dist/api/user.json`
+
+```json
+{
+    "name": "pompeygao",
+    "intro": "I am a rookie"
+}
+```
+
+2.创建必须的`action`创建函数。
+
+```
+cd src/redux/actions
+touch userInfo.js
+```
+
+`src/redux/actions/userInfo.js`
+
+```js
+/**action */
+export const GET_USER_INFO_REQUEST = "userInfo/GET_USER_INFO_REQUEST";
+export const GET_USER_INFO_SUCCESS = "userInfo/GET_USER_INFO_SUCCESS";
+export const GET_USER_INFO_FAIL = "userInfo/GET_USER_INFO_FAIL";
+
+function getUserInfoRequest() {
+    return{
+        type: GET_USER_INFO_REQUEST
+    }
+}
+
+function getUserInfoSuccess(userInfo) {
+    return{
+        type: GET_USER_INFO_SUCCESS,
+        userInfo: userInfo
+    }
+}
+
+function getUserInfoSuccess() {
+    return {
+        type: GET_USER_INFO_FAIL
+    }
+}
+```
+
+我们创建了发起请求，请求成功，请求失败三个`action`创建函数。
+
+3.创建`reducer`
+
+再强调下，`reducer`是根据旧`state`和`action`生成新`state`的**纯函数**。
+
+```
+cd src/redux/reducers
+touch userInfo.js
+```
+
+`src/redux/reducers/userInfo.js`
+
+```jsx
+import {GET_USER_INFO_REQUEST, GET_USER_INFO_SUCCESS, GET_USER_INFO_FAIL} from 'actions/userInfo';
+
+
+const initState = {
+    isLoading: false,
+    userInfo: {},
+    errorMsg: ''
+};
+
+export default function reducer(state = initState, action) {
+    switch (action.type) {
+        case GET_USER_INFO_REQUEST:
+            return {
+                ...state,
+                isLoading: true,
+                userInfo: {},
+                errorMsg: ''
+            };
+        case GET_USER_INFO_SUCCESS:
+            return {
+                ...state,
+                isLoading: false,
+                userInfo: action.userInfo,
+                errorMsg: ''
+            };
+        case GET_USER_INFO_FAIL:
+            return {
+                ...state,
+                isLoading: false,
+                userInfo: {},
+                errorMsg: '请求错误'
+            };
+        default:
+            return state;
+    }
+}
+```
+
+**这里的...state语法，是和别人的Object.assign()起同一个作用，合并新旧state。我们这里是没效果的，但是我建议都写上这个哦**
+
+组合`reducer`
+
+`src/redux/reducers.js`
+
+```jsx
+import counter from 'reducers/counter';
+import userInfo from 'reducers/userInfo';
+
+export default function combineReducers(state = {}, action) {
+    return {
+        counter: counter(state.counter, action),
+        userInfo: userInfo(state.userInfo, action)
+    }
+}
+```
+
+4.现在有了`action`，有了`reducer`，我们就需要调用把`action`里面的三个`action`函数和网络请求结合起来。
+
+- 请求中 `dispatch getUserInfoRequest`
+- 请求成功 `dispatch getUserInfoSuccess`
+- 请求失败 `dispatch getUserInfoFail`
+
+`src/redux/actions/userInfo.js`增加
+
+```jsx
+export function getUserInfo() {
+    return function (dispatch) {
+        dispatch(getUserInfoRequest());
+
+        return fetch('http://localhost:8080/api/user.json').then(response =>{
+            return response.json()
+        }).then(json => {
+            dispatch(getUserInfoSuccess(json))
+        }).catch(()=>{
+            dispatch(getUserInfoFail())
+        })
+    }
+}
+```
+
+我们这里发现，别的`action`创建函数都是返回`action`对象：
+
+```
+{type: xxxx}
+```
+
+但是我们现在的这个`action`创建函数 `getUserInfo`则是返回函数了。
+
+为了让`action`创建函数除了返回`action`对象外，还可以返回函数，我们需要引用`redux-thunk`。
+
+`yarn add redux-thunk`
+
+这里涉及到`redux`中间件`middleware`，后面会讲到的。你也可以读这里[Middleware](http://cn.redux.js.org/docs/advanced/Middleware.html)。
+
+简单的说，中间件就是`action`在到达`reducer`，先经过中间件处理。我们之前知道`reducer`能处理的`action`只有这样的`{type:xxx}`，所以我们使用中间件来处理函数形式的`action`，把他们转为标准的`action`给`reducer`。这是`redux-thunk`的作用。
+使用`redux-thunk`中间件，我们来引入`redux-thunk`中间件
+
+```jsx
+import { createStore, applyMiddleware } from "redux";
+import thunkMiddleware from "redux-thunk";
+import combineReducers from "./reducers.js";
+
+let store = createStore(combineReducers, applyMiddleware(thunkMiddleware));
+
+export default store;
+```
+
+到这里，`redux`这边OK了，我们来写个组件验证下。
+
+```
+cd src/containers && mkdir UserInfo
+touch UserInfo/UserInfo.js
+```
+
+`src/pages/UserInfo/UserInfo.js`
+
+```jsx
+ import React, { Component } from "react";
+import { connect } from "react-redux";
+import { getUserInfo } from "actions/userInfo";
+
+class UserInfo extends Component {
+    render() {
+        const { userInfo: { isLoading, userInfo, errorMsg }, getUserInfo } = this.props;
+        return (
+            <div>
+                {
+                    isLoading
+                        ? "信息获取中..."
+                        : (errorMsg
+                            ? errorMsg
+                            : <div>
+                                <p>用户信息</p>
+                                <p>用户名：{userInfo.name}</p>
+                                <p>用户简介：{userInfo.intro}</p>
+                            </div>)
+                }
+                <button onClick={() => getUserInfo()}>获取用户信息</button>
+            </div>
+        )
+    }
+}
+export default connect(state => ({ userInfo: state.userInfo }), { getUserInfo })(UserInfo);
+```
+
+这里你可能发现`connect`参数写法不一样了，`mapStateToProps`函数用了`es6`简写，`mapDispatchToProps`用了`react-redux`提供的简单写法。
+
+增加路由
+`src/router/router.js`
+
+```jsx
+import React from 'react';
+import { BrowserRouter, Route,  Switch, Link } from 'react-router-dom';
+import Home from 'containers/Home/Home';
+import About from 'containers/About/About';
+import Counter from "containers/Counter/Counter";
+import UserInfo from "containers/UserInfo/UserInfo";
+
+const getRouter = () => {
+    return (
+        <BrowserRouter>
+            <div>
+                <ul>
+                    <li><Link to="">首 页</Link> </li>
+                    <li><Link to="/userinfo">用户信息</Link></li>
+                    <li><Link to="/conuter">计 数 器</Link></li>
+                    <li><Link to="/about">关 于</Link></li>
+                </ul>
+                <Switch>
+                    <Route exact path="/" component={Home} />
+                    <Route path="/userinfo" component={UserInfo} />
+                    <Route path="/conuter" component={Counter} />
+                    <Route path="/about" component={About} />
+                </Switch>
+            </div>
+        </BrowserRouter>
+    )
+}
+export default getRouter;
+```
+
+现在可以执行`yarn start`去看效果啦！
+
+到这里`redux`集成基本告一段落了，后面我们还会有一些优化。
+
+
+
+## combinReducers优化
 
 
 
@@ -1028,10 +1301,7 @@ if (module.hot) {
 
 
 
-
-
-
-
+## devtool优化
 
 
 
