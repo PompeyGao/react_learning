@@ -203,7 +203,7 @@
 
    修改`webpack.config.js`,增加`babel-loader`
 
-   ```js
+   ```json
    	/*src文件夹下面的以.js或.jsx结尾的文件，要使用babel解析*/
        /*cacheDirectory是用来缓存编译结果，下次编译加速*/
        module: {
@@ -224,7 +224,7 @@
 
    修改`src/inde.js`
 
-   ```
+   ```js
     /*使用es6的箭头函数*/
     var func = str => {
         document.getElementById('app').innerHTML = str;
@@ -246,7 +246,7 @@
 
 2. 修改`src/index.js`,使用`react`
 
-   ```react
+   ```jsx
    import React from 'react';
    import ReactDom from 'react-dom';
 
@@ -266,7 +266,7 @@
 
    打开`Hello.js`,
 
-   ```react
+   ```jsx
    import React, { Component } from "react";
 
    export default class Hello extends Component{
@@ -282,7 +282,7 @@
 
    修改`src/index.js`
 
-   ```react
+   ```jsx
    import React from "react";
    import ReactDom from 'react-dom';
    import Hello from './components/Hello/Hello.js'
@@ -308,7 +308,7 @@
 
 `src/router/router.js`
 
-```react
+```jsx
 import React from 'react';
 import {
     BrowserRouter as Router,
@@ -349,7 +349,7 @@ export default getRouter;
 
 *Home.js*
 
-```react
+```jsx
 import React, { Component } from "react";
 
 export default class Home extends Component{
@@ -365,7 +365,7 @@ export default class Home extends Component{
 
 *About.js*
 
-```react
+```jsx
 import React, { Component } from "react";
 
 export default class Home extends Component{
@@ -383,7 +383,7 @@ export default class Home extends Component{
 
 *src/index.js*
 
-```react
+```jsx
 import React from "react";
 import ReactDom from 'react-dom';
 // import Hello from './components/Hello/Hello.js';
@@ -416,7 +416,7 @@ ReactDom.render(
 
 修改`webpack.config.js`,增加`webpack-dev-server`的配置
 
-```js
+```json
 devServer: {
         contentBase: path.join(__dirname, './dist')
 }
@@ -448,7 +448,7 @@ devServer: {
 
 然后对`webpack-dev-server`的配置进行修改:
 
-```js
+```json
 devServer: {
         contentBase: path.join(__dirname, './dist'),
         port: 8080,
@@ -474,7 +474,7 @@ devServer: {
 
 2、然后在`src/index.js`中进行修改。增加`module.hot.accept()`,如下。当模块更新的时候，通知`index.js`。
 
-```react
+```jsx
 import React from "react";
 import ReactDom from 'react-dom';
 // import Hello from './components/Hello/Hello.js';
@@ -497,7 +497,7 @@ ReactDom.render(
 
 修改`Home.js`,增加计数`state`
 
-```react
+```jsx
 import React, { Component } from "react";
 
 export default class Home extends Component{
@@ -574,7 +574,7 @@ entry: [
 
 3、在`src/index.js`中
 
-```react
+```jsx
 import React from "react";
 import ReactDom from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
