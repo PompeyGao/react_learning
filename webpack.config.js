@@ -27,6 +27,7 @@ module.exports = {
         port: 8080,
         historyApiFallback: true
     },
+    devtool: 'inline-source-map',
     resolve: {
         alias: {
             containers: path.join(__dirname, 'src/containers'),
@@ -50,8 +51,19 @@ module.exports = {
                 // It enables caching results in ./node_modules/.cache/babel-loader/
                 // directory for faster rebuilds.
                 cacheDirectory: true
-            },
-
+            }
+        }, {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader']
+        }, {
+            test: /\.(png|jpe?g|gif)$/,
+            use: [{
+                    loader: 'url-loader',
+                    options: {
+                        limit: 8192
+                    }
+                }
+            ]
         }]
     }
 };

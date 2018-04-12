@@ -983,6 +983,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(Counter);
 > 所有容器组件都可以访问 Redux store，所以可以手动监听它。一种方式是把它以 props 的形式传入到所有容器组件中。但这太麻烦了，因为必须要用 store 把展示组件包裹一层，仅仅是因为恰好在组件树中渲染了一个容器组件。
 
 
+
 > 建议的方式是使用指定的 React Redux 组件`Provider `来 魔法般的 让所有容器组件都可以访问 store，而不必显示地传递它。只需要在渲染根组件时使用即可。
 
 `src/index.js`
@@ -1291,17 +1292,138 @@ export default getRouter;
 
 到这里`redux`集成基本告一段落了，后面我们还会有一些优化。
 
-
-
 ## combinReducers优化
 
+`redux`提供了一个`combineReducers`函数来合并`reducer`，不用我们自己合并哦。写起来简单，但是意思和我们
+自己写的`combinReducers`也是一样的。
 
+`src/redux/reducers.js`
 
+```jsx
+import {combineReducers} from "redux";
+import counter from 'reducers/counter';
+import userInfo from 'reducers/userInfo';
 
-
-
+export default combineReducers({
+    counter,
+    userInfo
+});
+```
 
 ## devtool优化
+
+现在我们发现一个问题，如果代码写错了，浏览器报错只报在`build.js`的第几行。
+
+这让我们分析错误无从下手。看[这里](https://doc.webpack-china.org/configuration/devtool)。
+
+这次看到的错误信息就会提示的很详细。
+
+## 编译css
+
+`css-loader`使你能够使用类似`@import` 和 `url(...)`的方法实现 `require()`的功能；
+
+`style-loader`将所有的计算后的样式加入页面中； 二者组合在一起使你能够把样式表嵌入`webpack`打包后的JS文件中。
+
+安装 ` css-loader` 和 `style-loader`
+
+`yarn add css-loader style-loader --dev`
+
+在`webpack.config.js` `rules`增加
+
+```json
+{
+   test: /\.css$/,
+   use: ['style-loader', 'css-loader']
+}
+```
+
+我们用`About`页面来测试下
+
+```
+cd src/containers/About
+touch About.css
+```
+
+`src/containers/About/About.css`
+
+```css
+.font-box{
+    border: 1px solid red;
+}
+```
+
+`src/containers/About/About.js`
+
+```jsx
+import React, { Component } from "react";
+import './About.css'
+
+export default class About extends Component{
+    render(){
+        return(
+            <div className="font-box">
+                这是About页面-
+            </div>
+        )
+    }
+}
+```
+
+可以`yarn start`看到关于页面的样式。
+
+## 编译图片
+
+安装`url-loader file-load`
+
+`yarn add url-loader file-loader --dev`
+
+`webpack.config.js` `rules`增加
+
+```js
+{
+    test: /\.(png|jpg|gif)$/,
+    use: [{
+        loader: 'url-loader',
+        options: {
+            limit: 8192
+        }
+    }]
+}
+```
+
+`options limit 8192`意思是，小于等于8K的图片会被转成`base64`编码，直接插入HTML中，减少`HTTP`请求。
+
+我们来用关于页面测试下
+
+```
+cd src/containers/About
+mkdir images
+```
+
+给`images`文件夹放一个图片。
+
+修改代码，引用图片.
+
+`src/containers/About/About.js`
+
+```jsx
+import React, { Component } from "react";
+import './About.css';
+import image from "./images/qgwl.gif";
+
+export default class About extends Component{
+    render(){
+        return(
+            <div className="font-box">
+                这是About页面
+            	<img src={image} />
+            </div>
+        )
+    }
+}
+```
+
+`yarn start `打开关于页面，可以看到图片已经加载。
 
 
 
