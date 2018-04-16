@@ -10,16 +10,21 @@
 //         filename: 'bundle.js'
 //     }
 // };
-
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-    entry: [
-        'react-hot-loader/patch',
-        path.join(__dirname, 'src/index.js')
-    ],
+    entry: {
+        app: [
+            'react-hot-loader/patch',
+            path.join(__dirname, 'src/index.js')
+        ],
+        vendor: ['react', 'react-router-dom', 'redux', 'react-dom', 'react-redux']
+    },
     output: {
-        filename: 'bundle.js',
+        filename: '[name].[hash].js',
+        chunkFilename: '[name].[chunkhash].js',
         path: path.resolve(__dirname, 'dist')
     }, 
     devServer: {
@@ -65,5 +70,37 @@ module.exports = {
                 }
             ]
         }]
-    }
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'index.html',
+            template: path.join(__dirname, 'src/index.html')
+        }),
+        // new webpack.optimize.CommonsChunkPlugin({
+        //     name: 'vendor'
+        // }),
+        new webpack.optimize.SplitChunksPlugin({
+            cacheGroups: {
+                default: {
+                    minChunks: 2,
+                    priority: -20,
+                    reuseExistingChunk: true,
+                },
+                //打包重复出现的代码
+                vendor: {
+                    chunks: 'initial',
+                    minChunks: 2,
+                    maxInitialRequests: 5, // The default limit is too small to showcase the effect
+                    minSize: 0, // This is example is too small to create commons chunks
+                    name: 'vendor'
+                },
+                //打包第三方类库
+                commons: {
+                    name: "commons",
+                    chunks: "initial",
+                    minChunks: Infinity
+                }
+            }
+        })
+    ]
 };

@@ -1425,6 +1425,307 @@ export default class About extends Component{
 
 `yarn start `打开关于页面，可以看到图片已经加载。
 
+## 按需加载
+
+为什么要实现按需加载？
+
+我们现在看到，打包完后，所有页面只生成了一个`build.js`,当我们首屏加载的时候，就会很慢。因为他也下载了别的页面的`js`了哦。
+
+如果每个页面都打包了自己单独的JS，在进入自己页面的时候才加载对应的js，那首屏加载就会快很多哦。
+
+在 `react-router 2.0`时代， 按需加载需要用到的最关键的一个函数，就是`require.ensure()`，它是按需加载能够实现的核心。
+
+在4.0版本，官方放弃了这种处理按需加载的方式，选择了一个更加简洁的处理方式。
+
+[传送门](https://reacttraining.com/react-router/web/guides/code-splitting)
+
+根据官方示例，我们开搞
+
+`yarn add bundle-loader --dev`
+
+新建`bundle.js`
+
+```
+cd src/router
+touch bundle.js
+```
+
+`src/router/Bundle.js`
+
+```jsx
+import react, { Component } from "react";
+
+class Bundle extends Component {
+    state = {
+         // short for "module" but that's a keyword in js, so "mod"
+        mod: null
+    };
+
+    componentWillMount(){
+        this.load(this.props);
+    }
+
+    componentWillReceiveProps(nextProps){
+        if(nextProps.load !== this.props.load){
+            this.load(nextProps);
+        }
+    }
+
+    load(props){
+        this.setState({
+            mod: null
+        });
+
+        props.load(mod => {
+            this.setState({
+                mod: mod.default ? mod.default : mod
+            });
+        })
+    }
+
+    render(){
+        return this.props.children(this.state.mod)
+    }
+
+}
+export default Bundle;
+```
+
+改造路由器
+
+`src/router/router.js`
+
+```jsx
+import React from 'react';
+import { BrowserRouter, Route,  Switch, Link } from 'react-router-dom';
+
+import Bundle from "./bundle";
+import Home from 'bundle-loader?lazy&name=home!containers/Home/Home';
+import About from 'bundle-loader?lazy&name=about!containers/About/About';
+import Counter from "bundle-loader?lazy&name=counter!containers/Counter/Counter";
+import UserInfo from "bundle-loader?lazy&name=userInfo!containers/UserInfo/UserInfo";
+
+const Loading = () => {
+    return <div>加载中...</div>
+};
+
+const createComponent = (component) => (props) => (
+    <Bundle load={component}>
+        {
+            (Component) => Component ? <Component {...props}/> : <Loading />
+        }
+    </Bundle>
+);
+
+const getRouter = () => {
+    return (
+        <BrowserRouter>
+            <div>
+                <ul>
+                    <li><Link to="">首 页</Link> </li>
+                    <li><Link to="/userinfo">用户信息</Link></li>
+                    <li><Link to="/conuter">计 数 器</Link></li>
+                    <li><Link to="/about">关 于</Link></li>
+                </ul>
+                <Switch>
+                    <Route exact path="/" component={createComponent(Home)} />
+                    <Route path="/userinfo" component={createComponent(UserInfo)} />
+                    <Route path="/conuter" component={createComponent(Counter)} />
+                    <Route path="/about" component={createComponent(About)} />
+                </Switch>
+            </div>
+        </BrowserRouter>
+    )
+};
+export default getRouter;
+```
+
+现在你可以`yarn start`，打开浏览器，看是不是进入新的页面，都会加载自己的js的~
+
+但是你可能发现，名字都是`0.bundle.js`这样子的，这分不清楚是哪个页面的`js`呀！
+
+我们修改下`webpack.config.js`,加个`chunkFilename`。`chunkFilename`是除了`entry`定义的入口`js`之外的`js`~
+
+```js
+    output: {
+        path: path.join(__dirname, './dist'),
+        filename: 'bundle.js',
+        chunkFilename: '[name].js'
+    }
+```
+
+现在你运行发现名字变成`home.js`,这样的了。棒棒哒！
+
+那么问题来了`home`是在哪里设置的？`webpack`怎么知道他叫`home`？
+
+其实在这里我们定义了，`router.js`里面
+
+`import Home from 'bundle-loader?lazy&name=home!containers/Home/Home';`
+
+看到没。这里有个`name=home`。
+
+参考地址：
+
+1. [http://www.jianshu.com/p/8dd98a7028e0](http://www.jianshu.com/p/8dd98a7028e0)
+2. [https://github.com/ReactTraining/react-router/blob/master/packages/react-router-dom/docs/guides/code-splitting.md](https://github.com/ReactTraining/react-router/blob/master/packages/react-router-dom/docs/guides/code-splitting.md)
+3. [https://segmentfault.com/a/1190000007949841](https://segmentfault.com/a/1190000007949841)
+4. [http://react-china.org/t/webpack-react-router/10123](http://react-china.org/t/webpack-react-router/10123)
+5. [https://juejin.im/post/58f9717e44d9040069d06cd6](https://juejin.im/post/58f9717e44d9040069d06cd6)
+
+## 缓存
+
+想象一下这个场景~
+
+我们网站上线了，用户第一次访问首页，下载了`home.js`，第二次访问又下载了`home.js`~
+
+这肯定不行呀，所以我们一般都会做一个缓存，用户下载一次`home.js`后，第二次就不下载了。
+
+有一天，我们更新了`home.js`，但是用户不知道呀，用户还是使用本地旧的`home.js`。出问题了~
+
+怎么解决？每次代码更新后，打包生成的名字不一样。比如第一次叫`home.a.js`，第二次叫`home.b.js`。
+
+文档[看这里](https://doc.webpack-china.org/guides/caching)
+
+我们照着文档来
+
+`webpack.config.js`
+
+```js
+output: {
+        filename: '[name].[hash].js',
+        chunkFilename: '[name].[chunkhash].js',
+        path: path.resolve(__dirname, 'dist')
+    }
+```
+
+每次打包都给文件名添加个hash值，
+
+现在我们试试，是不是修改了文件，打包后相应的文件名字就变啦？
+
+但是你可能发现了，网页打开报错了~因为你`dist/index.html`里面引用`js`名字还是`bundle.js`老名字啊,改成新的名字就可以啦。
+
+啊~那岂不是我每次编译打包，都得去改一下js名字？欲知后事如何，且看下节分享。
+
+## HtmlWebpackPlugin
+
+这个插件作用就是，每次会自动把js插入到你的模板`index.html`里面去。
+
+`yarn add html-webpack-plugin --dev`
+
+新建模板`index.html`
+
+```
+cd src
+touch index.html
+```
+
+`src/index.html`
+
+```html
+<!Doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>react learning</title>
+  </head>
+  <body>
+  	<div id="app"></div>
+  </body>
+</html>
+```
+
+修改`webpack.config.js`，增加`plugin`
+
+```js
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+module.exports = {
+  ......,
+  plugins: [
+    new HtmlWebpackPlugin({
+        filename: 'index.html',
+        template: path.join(__dirname, 'src/index.html')
+    })]
+}
+```
+
+`yarn start`运行项目，看看是不是能正常访问啦。~
+
+说明一下：`yarn start`打包后的文件存在内存中，是看不到的。~ 你可以把遗留`dist/index.html`删除掉了。
+
+## 提取公共代码
+
+想象一下，我们的主文件，原来的`bundle.js`里面是不是包含了`react`,`redux`,`react-router`等等
+这些代码？？这些代码基本上不会改变的。但是，他们合并在`bundle.js`里面，每次项目发布，重新请求`bundle.js`的时候，相当于重新请求了`react`等这些公共库。
+
+我们把`react`这些不会改变的公共库提取出来，用户缓存下来。从此以后，用户再也不用下载这些库了，无论是否发布项目。
+
+`webpack`文档给了教程，[看这里](https://doc.webpack-china.org/guides/caching#-extracting-boilerplate-)。
+
+修改`webpack.config.js`
+
+```js
+const webpack = require('webpack');
+module.exports = {
+  entry: {
+        app: [
+            'react-hot-loader/patch',
+            path.join(__dirname, 'src/index.js')
+        ],
+        vendor: ['react', 'react-router-dom', 'redux', 'react-dom', 'react-redux']
+   },
+  plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'index.html',
+            template: path.join(__dirname, 'src/index.html')
+        }),
+        new webpack.optimize.SplitChunksPlugin({
+            cacheGroups: {
+                default: {
+                    minChunks: 2,
+                    priority: 10,
+                    reuseExistingChunk: true,
+                },
+                //打包重复出现的代码
+                vendor: {
+                    chunks: 'initial',
+                    minChunks: 2,
+                    maxInitialRequests: 5, // The default limit is too small to showcase the effect
+                    minSize: 0, // This is example is too small to create commons chunks
+                    name: 'vendor'
+                },
+                //打包第三方类库
+                commons: {
+                    name: "commons",
+                    chunks: "initial",
+                    minChunks: Infinity
+                }
+            }
+        })
+    ]
+}
+```
+
+把`react`等库生成打包到`vendor.hash.js`里面去。
+
+但是你现在可能发现编译生成的文件`app.[hash].js`和`vendor.[hash].js`生成的`hash`一样的，这里是个问题，因为呀，你每次修改代码,都会导致`vendor.[hash].js`名字改变，那我们提取出来的意义也就没了。其实文档上写的很清楚，
+
+```
+   output: {
+        path: path.join(__dirname, './dist'),
+        filename: '[name].[hash].js', //这里应该用chunkhash替换hash
+        chunkFilename: '[name].[chunkhash].js'
+    }
+```
+
+但是无奈，如果用`chunkhash`，会报错。和`webpack-dev-server --hot`不兼容，具体[看这里](https://github.com/webpack/webpack-dev-server/issues/377)。
+
+现在我们在配置开发版配置文件，就向`webpack-dev-server`妥协，因为我们要用他。问题先放这里，等会我们配置正式版`webpack.prd.config.js`的时候要解决这个问题。
+
+参考文章：
+
+[记一次webpack3升级webpack4的踩坑]: https://www.cnblogs.com/carrotWu/p/8665720.html
+[webpack/webpack]: https://github.com/webpack/webpack/blob/master/examples/common-chunk-and-vendor-chunk/webpack.config.js
+
 
 
 
