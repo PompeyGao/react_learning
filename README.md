@@ -1709,7 +1709,7 @@ module.exports = {
 
 但是你现在可能发现编译生成的文件`app.[hash].js`和`vendor.[hash].js`生成的`hash`一样的，这里是个问题，因为呀，你每次修改代码,都会导致`vendor.[hash].js`名字改变，那我们提取出来的意义也就没了。其实文档上写的很清楚，
 
-```
+```js
    output: {
         path: path.join(__dirname, './dist'),
         filename: '[name].[hash].js', //这里应该用chunkhash替换hash
@@ -1719,12 +1719,237 @@ module.exports = {
 
 但是无奈，如果用`chunkhash`，会报错。和`webpack-dev-server --hot`不兼容，具体[看这里](https://github.com/webpack/webpack-dev-server/issues/377)。
 
-现在我们在配置开发版配置文件，就向`webpack-dev-server`妥协，因为我们要用他。问题先放这里，等会我们配置正式版`webpack.prd.config.js`的时候要解决这个问题。
+现在我们在配置开发版配置文件，就向`webpack-dev-server`妥协，因为我们要用他。问题先放这里，等会我们配置正式版`webpack.prod.js`的时候要解决这个问题。
 
 参考文章：
 
-[记一次webpack3升级webpack4的踩坑]: https://www.cnblogs.com/carrotWu/p/8665720.html
-[webpack/webpack]: https://github.com/webpack/webpack/blob/master/examples/common-chunk-and-vendor-chunk/webpack.config.js
+[记一次webpack3升级webpack4的踩坑](https://www.cnblogs.com/carrotWu/p/8665720.html)
+
+[webpack/webpack](https://github.com/webpack/webpack/blob/master/examples/common-chunk-and-vendor-chunk/webpack.config.js)
+
+## 生产环境构建
+
+> 开发环境(development)和生产环境(production)的构建目标差异很大。在开发环境中，我们需要具有强大的、具有实时重新加载(live reloading)或热模块替换(hot module replacement)能力的 source map 和 localhost server。而在生产环境中，我们的目标则转向于关注更小的 bundle，更轻量的 source map，以及更优化的资源，以改善加载时间。由于要遵循逻辑分离，我们通常建议为每个环境编写彼此独立的 webpack 配置。
+
+文档[看这里](https://doc.webpack-china.org/guides/production)
+
+新增`webpack.prod.js`
+
+`touch webpack.prod.js`
+
+在`webpack.config.js`的基础上先做以下几个修改~
+
+1. 先删除`webpack-dev-server`相关的东西~
+2. `devtool`的值改成`cheap-module-source-map`
+3. 刚才说的`hash`改成`chunkhash`
+
+`webpack.prod.js`
+
+```js
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
+const path = require('path');
+
+module.exports = {
+    entry: {
+        app: [
+            'react-hot-loader/patch',
+            path.join(__dirname, 'src/index.js')
+        ],
+        vendor: ['react', 'react-router-dom', 'redux', 'react-dom', 'react-redux']
+    },
+    output: {
+        filename: '[name].[chunkhash].js',
+        chunkFilename: '[name].[chunkhash].js',
+        path: path.resolve(__dirname, 'dist')
+    },
+    devtool: 'cheap-module-source-map',
+    resolve: {
+        alias: {
+            containers: path.join(__dirname, 'src/containers'),
+            component: path.join(__dirname, 'src/component'),
+            router: path.join(__dirname, 'src/router'),
+            actions: path.join(__dirname, 'src/redux/actions'),
+            reducers: path.join(__dirname, 'src/redux/reducers')
+        }
+    },
+    /*src文件夹下面的以.js||.jsx结尾的文件，要使用babel解析*/
+    /*cacheDirectory是用来缓存编译结果，下次编译加速*/
+    module: {
+        rules: [{
+            test: /\.(js|jsx)$/,
+            include: path.join(__dirname, 'src'),
+            loader: require.resolve('babel-loader'),
+            options: {
+                // This is a feature of `babel-loader` for webpack (not Babel itself).
+                // It enables caching results in ./node_modules/.cache/babel-loader/
+                // directory for faster rebuilds.
+                cacheDirectory: true
+            }
+        }, {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader']
+        }, {
+            test: /\.(png|jpe?g|gif)$/,
+            use: [{
+                loader: 'url-loader',
+                options: {
+                    limit: 8192
+                }
+            }
+            ]
+        }]
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'index.html',
+            template: path.join(__dirname, 'src/index.html')
+        }),
+        new webpack.optimize.SplitChunksPlugin({
+            cacheGroups: {
+                default: {
+                    minChunks: 2,
+                    priority: -20,
+                    reuseExistingChunk: true,
+                },
+                //打包重复出现的代码
+                vendor: {
+                    chunks: 'initial',
+                    minChunks: 2,
+                    maxInitialRequests: 5, // The default limit is too small to showcase the effect
+                    minSize: 0, // This is example is too small to create commons chunks
+                    name: 'vendor'
+                },
+                //打包第三方类库
+                commons: {
+                    name: "commons",
+                    chunks: "initial",
+                    minChunks: Infinity
+                }
+            }
+        })
+    ]
+};
+```
+
+在`package.json`增加打包脚本
+
+`"build":"webpack --config webpack.config.js"`
+
+然后执行`yarn build`~看看`dist`文件夹是不是生成了我们发布要用的所有文件.
+
+接下来我们还是要优化正式版配置文件。
+
+## 文件压缩
+
+`webpack`使用`UglifyJSPlugin`来压缩生成的文件。
+
+`yarn add uglifyjs-webpack-plugin`
+
+`webpack.prod.js`
+
+```js
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+......
+plugins: [
+    new UglifyJSPlugin({
+  	    sourceMap: true
+    })
+]
+```
+
+`yarn build`进行打包。
+
+## 指定环境
+
+> 许多 library 将通过与 process.env.NODE_ENV 环境变量关联，以决定 library 中应该引用哪些内容。例如，当不处于生产环境中时，某些 library 为了使调试变得容易，可能会添加额外的日志记录(log)和测试(test)。其实，当使用 process.env.NODE_ENV === 'production' 时，一些 library 可能针对具体用户的环境进行代码优化，从而删除或添加一些重要代码。我们可以使用 webpack 内置的 DefinePlugin 为所有的依赖定义这个变量：
+
+`webpack.prod.js`
+
+```js
+module.exports = {
+...
+  plugins: [
+  ...
+       new webpack.DefinePlugin({
+          'process.env': {
+              'NODE_ENV': JSON.stringify('production')
+           }
+       })
+  ]
+}
+```
+
+# public path
+
+想象一个场景，我们的静态文件放在了单独的静态服务器上去了，那我们打包的时候，如何让静态文件的链接定位到静态服务器呢？
+
+看文档[Public Path](https://doc.webpack-china.org/guides/public-path) ，webpack 提供一个非常有用的配置，该配置能帮助你为项目中的所有资源指定一个基础路径。它被称为`公共路径(publicPath)`。
+
+`webpack.prod.js` `output` 中增加一个`publicPath`，我们当前用`/`，相对于当前路径，如果你要改成别的`url`，就改这里就好了。
+
+```
+    output: {
+        publicPath : '/'
+    }
+```
+
+## 打包优化
+
+你现在打开`dist`，是不是发现好多好多文件，每次打包后的文件在这里混合了？我们希望每次打包前自动清理下`dist`文件。
+
+`yarn add clean-webpack-plugin --dev`
+
+`webpack.prod.js`
+
+```js
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+
+plugins: [
+    new CleanWebpackPlugin(['dist'])
+]
+```
+
+现在`yarn build`试试，是不是之前的都清空了。当然我们之前的`api`文件夹也被清空了，不过没关系哦~本来就是测试用的。
+
+# 抽取css
+
+目前我们的`css`是直接打包进`js`里面的，我们希望能单独生成`css`文件。
+
+我们使用[extract-text-webpack-plugin](https://github.com/webpack-contrib/extract-text-webpack-plugin)来实现。[ExtractTextWebpackPlugin](https://doc.webpack-china.org/plugins/extract-text-webpack-plugin)
+
+`yarn add extract-text-webpack-plugin@next --dev` 
+
+`webpack.prod.js`
+
+```js
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ExtractTextPlugin.extract({
+          fallback: "style-loader",
+          use: "css-loader"
+        })
+      }
+    ]
+  },
+  plugins: [
+     new ExtractTextPlugin({
+          filename: "[name].[contenthash].css",
+          disable: false,
+          allChunks: true
+      })
+  ]
+}
+```
+
+`yarn build`后发现单独生成了`css`文件哦.
+
+
 
 
 

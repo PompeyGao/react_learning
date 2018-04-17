@@ -1,21 +1,12 @@
-// const path = require('path');
-
-// module.exports = {
-//     /**入口 */
-//     entry: path.join(__dirname,'src/index.js'),
-
-//     /**输出到dist文件夹，输出文件名字为bundle.js */
-//     output:{
-//         path: path.join(__dirname, './dist'),
-//         filename: 'bundle.js'
-//     }
-// };
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-    mode: "development",
+    mode: 'production',
     entry: {
         app: [
             'react-hot-loader/patch',
@@ -24,22 +15,17 @@ module.exports = {
         vendor: ['react', 'react-router-dom', 'redux', 'react-dom', 'react-redux']
     },
     output: {
-        filename: '[name].[hash].js',
+        filename: '[name].[chunkhash].js',
         chunkFilename: '[name].[chunkhash].js',
-        path: path.resolve(__dirname, 'dist')
-    }, 
-    devServer: {
-        contentBase: path.join(__dirname, './dist'),
-        port: 8080,
-        historyApiFallback: true
+        path: path.resolve(__dirname, 'dist'),
+        publicPath: '/'
     },
-    devtool: 'inline-source-map',
+    devtool: 'cheap-module-source-map',
     resolve: {
         alias: {
             containers: path.join(__dirname, 'src/containers'),
             component: path.join(__dirname, 'src/component'),
             router: path.join(__dirname, 'src/router'),
-            //redux: path.join(__dirname, 'src/redux'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
         }
@@ -49,7 +35,6 @@ module.exports = {
     module: {
         rules: [{
             test: /\.(js|jsx)$/,
-            //use: ['babel-loader?cacheDirectory=true'],
             include: path.join(__dirname, 'src'),
             loader: require.resolve('babel-loader'),
             options: {
@@ -60,15 +45,22 @@ module.exports = {
             }
         }, {
             test: /\.css$/,
-            use: ['style-loader', 'css-loader']
+            include: path.join(__dirname, 'src'),
+            use: ExtractTextPlugin.extract({
+                fallback: 'style-loader',
+                use: [
+                    'css-loader'
+                ]
+            })
         }, {
             test: /\.(png|jpe?g|gif)$/,
+            include: path.join(__dirname, 'src'),
             use: [{
-                    loader: 'url-loader',
-                    options: {
-                        limit: 8192
-                    }
+                loader: 'url-loader',
+                options: {
+                    limit: 8192
                 }
+            }
             ]
         }]
     },
@@ -77,9 +69,6 @@ module.exports = {
             filename: 'index.html',
             template: path.join(__dirname, 'src/index.html')
         }),
-        // new webpack.optimize.CommonsChunkPlugin({
-        //     name: 'vendor'
-        // }),
         new webpack.optimize.SplitChunksPlugin({
             cacheGroups: {
                 default: {
@@ -96,6 +85,19 @@ module.exports = {
                     name: 'vendor'
                 }
             }
+        }),
+        new UglifyJSPlugin({
+            sourceMap: true
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                'NODE_ENV': JSON.stringify('production')
+            }
+        }),
+        new CleanWebpackPlugin(['dist']),
+        new ExtractTextPlugin({
+            filename: "[name].[contenthash].css",
+            allChunks: true
         })
     ]
 };
