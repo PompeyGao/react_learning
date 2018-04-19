@@ -2417,3 +2417,64 @@ import NotFound from "bundle-loader?lazy&name=notFound!containers/NotFound/404";
 <Route component={createComponent(NotFound)} />
 ```
 
+## 使用CSS Modules
+
+关于什么是`CSS Modules`，我这里不介绍。
+
+可以去看阮一峰的文章[CSS Modules 用法教程](http://www.ruanyifeng.com/blog/2016/06/css_modules.html)
+
+修改以下几个地方：
+
+1. `webpack.config.js`
+
+   ```js
+   module: {
+           rules: [{
+               test: /\.css$/,
+               use: ["style-loader", "css-loader?modules&localIdentName=[local]-[hash:base64:5]", "postcss-loader"]
+           }]
+       }
+   ```
+
+2. `webpack.prod.js`
+
+   ```js
+   module: {
+       rules: [{
+           test: /\.css$/,
+           use: ExtractTextPlugin.extract({
+               fallback: "style-loader",
+               use: ["css-loader?modules&localIdentName=[local]-[hash:base64:5]", "postcss-loader"]
+           })
+       }]
+   }
+   ```
+
+3. `src/pages/Page1/page1.css`
+
+   ```css
+   .font_box {
+       border: 1px solid red;
+   }
+   ```
+
+4. `src/containers/About/About.js`
+
+   ```jsx
+   import React, { Component } from "react";
+   import style from './About.css';
+   import image from "./images/qgwl.gif";
+
+   export default class About extends Component{
+       render(){
+           return(
+               <div className={style.font_box}>
+                   这是About页面
+                   <img src={image} />
+               </div>
+           )
+       }
+   }
+   ```
+
+这样就可以了。

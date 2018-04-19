@@ -12,11 +12,10 @@ module.exports = merge(commonConfig, {
     module: {
         rules: [{
             test: /\.css$/,
-            include: path.join(__dirname, 'src'),
             use: ExtractTextPlugin.extract({
                 fallback: 'style-loader',
                 use: [
-                    'css-loader', 'postcss-loader'
+                    'css-loader?modules&localIdentName=[local]-[hash:base64:5]', 'postcss-loader'
                 ]
             })
         }]
