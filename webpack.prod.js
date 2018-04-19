@@ -16,7 +16,7 @@ module.exports = merge(commonConfig, {
             use: ExtractTextPlugin.extract({
                 fallback: 'style-loader',
                 use: [
-                    'css-loader'
+                    'css-loader', 'postcss-loader'
                 ]
             })
         }]
