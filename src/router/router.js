@@ -14,7 +14,7 @@ const Loading = () => {
 const createComponent = (component) => (props) => (
     <Bundle load={component}>
         {
-            (Component) => Component ? <Component {...props}/> : <Loading />
+            (Component) => Component ? <Component {...props}/> : <Loading {...props}/>
         }
     </Bundle>
 );
@@ -24,7 +24,7 @@ const getRouter = () => {
         <BrowserRouter>
             <div>
                 <ul>
-                    <li><Link to="">首 页</Link></li>
+                    <li><Link to="">首  页</Link></li>
                     <li><Link to="/userinfo">用户信息</Link></li>
                     <li><Link to="/conuter">计 数 器</Link></li>
                     <li><Link to="/about">关 于</Link></li>

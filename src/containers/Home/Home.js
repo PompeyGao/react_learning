@@ -1,6 +1,7 @@
 import React, { Component } from "react";
+import { hot } from 'react-hot-loader';
 
-export default class Home extends Component{
+class Home extends Component{
 
     constructor(props){
         super(props);
@@ -22,10 +23,11 @@ export default class Home extends Component{
 
         return(
             <div>
-                首页欢迎你~~ ~<br/>
+                首页欢迎你~~~<br/>
                 当前计数：{this.state.count} <br/>
                 <button onClick={() => this._handleClick()}> 加1s</button>
             </div>
         )
     }
 }
+export default hot(module)(Home);
