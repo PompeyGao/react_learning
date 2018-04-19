@@ -9,6 +9,7 @@ import Home from 'bundle-loader?lazy&name=home!containers/Home/Home';
 import About from 'bundle-loader?lazy&name=about!containers/About/About';
 import Counter from "bundle-loader?lazy&name=counter!containers/Counter/Counter";
 import UserInfo from "bundle-loader?lazy&name=userInfo!containers/UserInfo/UserInfo";
+import NotFound from "bundle-loader?lazy&name=notFound!containers/NotFound/404";
 
 const Loading = () => {
     return <div>加载中...</div>
@@ -35,6 +36,7 @@ export default class App extends Component {
                                 <Route path="/userinfo" component={createComponent(UserInfo)} />
                                 <Route path="/conuter" component={createComponent(Counter)} />
                                 <Route path="/about" component={createComponent(About)} />
+                                <Route component={createComponent(NotFound)} />
                             </Switch>
                         </div>
                     </BrowserRouter>
