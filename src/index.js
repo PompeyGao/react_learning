@@ -1,35 +1,20 @@
-/*使用es6的箭头函数*/
-/* var func = str =>{
-    document.getElementById('app').innerHTML = str
-}
-func('我现在在使用Babel!'); */
-
 import React from "react";
 import ReactDom from 'react-dom';
-import { AppContainer } from 'react-hot-loader';
-import { Provider } from "react-redux";
-import store from './redux/store';
-// import Hello from './components/Hello/Hello.js';
-import getRouter from 'router/router';
+import App from './App/app';
 
-const render = Component => {
-    ReactDom.render(
-        <AppContainer>
-            <Provider store={store}>
-                {Component}
-            </Provider>
-        </AppContainer>,
-        document.getElementById('app')
-    );
+const MOUNT_NODE = document.getElementById('app');
+
+let render = () => {
+    const NEXT = require('./App/app').default;
+    ReactDom.render(<NEXT />, MOUNT_NODE)
 }
-
-/**初始化 */
-render(getRouter());
-
 /**热更新 */
 if (module.hot) {
-    module.hot.accept('./router/router.js', () => {
-        const NextGetRouter = require('./router/router').default;
-        render(NextGetRouter())
-    });
+    module.hot.accept('./App/app', () =>
+        setImmediate(() => {
+            ReactDom.unmountComponentAtNode(MOUNT_NODE);
+            render();
+        })
+    );
 }
+render();

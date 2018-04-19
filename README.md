@@ -602,9 +602,47 @@ if (module.hot) {
 }
 ```
 
-目前仍然有点问题，待解决...
+4.修改`src/Home/Home.js`。 
 
+其他模块如果需要，可以自己同理修改。
 
+```jsx
+import React, { Component } from "react";
+import { hot } from 'react-hot-loader';
+
+class Home extends Component{
+
+    constructor(props){
+        super(props);
+        this.state = {
+            count: 0
+        }
+    }
+
+    _handleClick(){
+        this.setState({
+            count: ++this.state.count
+        })
+    }
+
+    render(){
+        const{
+            count
+        } = this.state;
+
+        return(
+            <div>
+                首页欢迎你~~~<br/>
+                当前计数：{this.state.count} <br/>
+                <button onClick={() => this._handleClick()}> 加1s</button>
+            </div>
+        )
+    }
+}
+export default hot(module)(Home);
+```
+
+可以执行`yarn start`,修改`src/Home/Home.js`，看下计数的变化。
 
 ## 文件路径优化
 
@@ -833,7 +871,7 @@ node build.js
 resolve: {
         alias: {
             containers: path.join(__dirname, 'src/containers'),
-            component: path.join(__dirname, 'src/component'),
+            components: path.join(__dirname, 'src/components'),
             router: path.join(__dirname, 'src/router'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
@@ -1512,7 +1550,7 @@ const Loading = () => {
 const createComponent = (component) => (props) => (
     <Bundle load={component}>
         {
-            (Component) => Component ? <Component {...props}/> : <Loading />
+            (Component) => Component ? <Component {...props}/> : <Loading {...props}/>
         }
     </Bundle>
 );
@@ -1767,7 +1805,7 @@ module.exports = {
     resolve: {
         alias: {
             containers: path.join(__dirname, 'src/containers'),
-            component: path.join(__dirname, 'src/component'),
+            components: path.join(__dirname, 'src/components'),
             router: path.join(__dirname, 'src/router'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
@@ -2016,7 +2054,7 @@ module.exports = {
     resolve: {
         alias: {
             containers: path.join(__dirname, 'src/containers'),
-            component: path.join(__dirname, 'src/component'),
+            components: path.join(__dirname, 'src/components'),
             router: path.join(__dirname, 'src/router'),
             actions: path.join(__dirname, 'src/redux/actions'),
             reducers: path.join(__dirname, 'src/redux/reducers')
@@ -2127,3 +2165,205 @@ module.exports = merge(commonConfig, {
     ]
 });
 ```
+
+## 加入 babel-plugin-transform-runtime 和 babel-polyfill
+
+先来说说[babel-plugin-transform-runtime](https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-runtime)
+
+> 在转换 ES2015 语法为 ECMAScript 5 的语法时，babel 会需要一些辅助函数，例如 _extend。babel 默认会将这些辅助函数内联到每一个 js 文件里，这样文件多的时候，项目就会很大。
+
+
+> 所以 babel 提供了 transform-runtime 来将这些辅助函数“搬”到一个单独的模块 babel-runtime 中，这样做能减小项目文件的大小。
+
+`yarn add babel-plugin-transform-runtime --dev`
+
+修改`.babelrc`配置文件,增加配置
+
+.babelrc
+
+```js
+ "plugins": [
+   ["transform-runtime",{
+        "helpers": false,
+        "polyfill": false,
+        "regenerator": true
+   }]
+ ]
+```
+
+再来看[babel-polyfill](https://babeljs.io/docs/usage/polyfill/)
+
+Q: 为什么要集成`babel-polyfill`?
+
+A:
+
+> Babel默认只转换新的JavaScript句法（syntax），而不转换新的API，比如Iterator、Generator、Set、Maps、Proxy、Reflect、Symbol、Promise等全局对象，以及一些定义在全局对象上的方法（比如Object.assign）都不会转码。
+> 举例来说，ES6在Array对象上新增了Array.from方法。Babel就不会转码这个方法。如果想让这个方法运行，必须使用babel-polyfill，为当前环境提供一个垫片。
+
+网上很多人说，集成了`transform-runtime`就不用`babel-polyfill`了，其实不然，看看官方怎么说的：
+
+> NOTE: Instance methods such as "foobar".includes("foo") will not work since that would require modification of existing built-ins (Use babel-polyfill for that).
+
+所以，我们还是需要`babel-polyfill`哦。
+
+`yarn add babel-polyfill --dev`
+
+修改webpack配置文件。
+
+`webpack.common.js`
+
+```js
+     app: [
+         "babel-polyfill",
+         path.join(__dirname, 'src/index.js')
+     ]
+```
+
+## 集成PostCSS
+
+[官方文档看这里](https://github.com/postcss/postcss)
+
+Q: 这是啥？为什么要用它？
+
+他有很多很多的插件，我们举几个例子~
+
+[Autoprefixer](https://github.com/postcss/autoprefixer)这个插件,可以自动给css属性加浏览器前缀。
+
+```css
+/*编译前*/
+.container{
+    display: flex;
+}
+/*编译后*/
+.container{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+}
+```
+
+ 安装`postcss-loader`
+
+```
+yarn add postcss-loader --dev
+```
+
+修改`webpack`配置文件,增加`postcss-loader`
+
+webpack.config.js
+
+```js
+        rules: [{
+            test: /\.css$/,
+            use: ["style-loader", "css-loader", "postcss-loader"]
+        }]
+```
+
+webpack.prod.js
+
+```js
+        rules: [{
+            test: /\.css$/,
+            use: ExtractTextPlugin.extract({
+                fallback: "style-loader",
+                use: ["css-loader", "postcss-loader"]
+            })
+        }]
+```
+
+根目录增加`postcss`配置文件。
+
+```
+touch postcss.config.js
+```
+
+`postcss.config.js`
+
+```js
+module.exports = {
+    plugins: [
+        require('autoprefixer')
+    ]
+}
+```
+
+现在你运行代码，然后写个css，去浏览器审查元素，看看，属性是不是生成了浏览器前缀？
+
+## 优化目录结构并增加404页面
+
+现在我们优化下目录结构，把`router`和`nav`分开，新建根组件`App`。
+
+新建`componments/Nav/Nav.js`
+
+新建根组件`src/App/app.js`
+
+编辑`app.js`
+
+```jsx
+import React, { Component } from "react";
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { AppContainer } from 'react-hot-loader';
+import Nav from 'components/Nav/Nav';
+import Bundle from "router/bundle";
+import store from '../redux/store';
+import Home from 'bundle-loader?lazy&name=home!containers/Home/Home';
+import About from 'bundle-loader?lazy&name=about!containers/About/About';
+import Counter from "bundle-loader?lazy&name=counter!containers/Counter/Counter";
+import UserInfo from "bundle-loader?lazy&name=userInfo!containers/UserInfo/UserInfo";
+
+const Loading = () => {
+    return <div>加载中...</div>
+};
+
+const createComponent = (component) => (props) => (
+    <Bundle load={component}>
+        {
+            (Component) => Component ? <Component {...props} /> : <Loading {...props} />
+        }
+    </Bundle>
+);
+
+export default class App extends Component {
+    render(){
+        return (
+            <AppContainer>
+                <Provider store={store}>
+                    <BrowserRouter>
+                        <div>
+                            {Nav()}
+                            <Switch>
+                                <Route exact path="/" component={createComponent(Home)} />
+                                <Route path="/userinfo" component={createComponent(UserInfo)} />
+                                <Route path="/conuter" component={createComponent(Counter)} />
+                                <Route path="/about" component={createComponent(About)} />
+                            </Switch>
+                        </div>
+                    </BrowserRouter>
+                </Provider>
+            </AppContainer>
+        )
+    }
+}
+```
+
+`src/components/Nav`
+
+```jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Nav = () =>{
+    return (
+        <ul>
+            <li><Link to="">首  页</Link></li>
+            <li><Link to="/userinfo">用户信息</Link></li>
+            <li><Link to="/conuter">计 数 器</Link></li>
+            <li><Link to="/about">关 于</Link></li>
+        </ul>
+    )
+};
+export default Nav;
+```
+

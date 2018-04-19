@@ -1,4 +1,4 @@
-import React from 'react';
+/* import React from 'react';
 import { BrowserRouter, Route,  Switch, Link } from 'react-router-dom';
 
 import Bundle from "./bundle";
@@ -39,4 +39,4 @@ const getRouter = () => {
         </BrowserRouter>
     )
 };
-export default getRouter;
+export default getRouter; */
