@@ -2367,3 +2367,53 @@ const Nav = () =>{
 export default Nav;
 ```
 
+`src/index.js`
+
+```jsx
+import React from "react";
+import ReactDom from 'react-dom';
+import App from './App/app';
+
+const MOUNT_NODE = document.getElementById('app');
+
+let render = () => {
+    const NEXT = require('./App/app').default;
+    ReactDom.render(<NEXT />, MOUNT_NODE)
+}
+/**热更新 */
+if (module.hot) {
+    module.hot.accept('./App/app', () =>
+        setImmediate(() => {
+            ReactDom.unmountComponentAtNode(MOUNT_NODE);
+            render();
+        })
+    );
+}
+render();
+```
+
+新建`containers/NotFound/404.js`
+
+```jsx
+import React, { Component } from "react";
+
+export default class NotFound extends Component {
+
+    render(){
+        return (
+            <div>
+                啊偶，页面找不到了...
+        </div>
+        )
+    }
+}
+```
+
+修改`src/App/app.js`
+
+```jsx
+import NotFound from "bundle-loader?lazy&name=notFound!containers/NotFound/404";
+
+<Route component={createComponent(NotFound)} />
+```
+
