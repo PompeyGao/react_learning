@@ -52,7 +52,7 @@
 
       打开index.js文件添加内容
 
-      ``document.getElementById('app').innerHTML = "Hello Webpack"`
+      `document.getElementById('app').innerHTML = "Hello Webpack"`
 
    3. 根据[`webpack`](https://doc.webpack-china.org/guides/getting-started)的指导文档创建webpack开发配置文件
 
@@ -180,7 +180,7 @@
 
    添加这些库，
 
-   `yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react babel-preset-stage-0 --dev`
+   `yarn add babel-core babel-loader babel-preset-env babel-preset-react babel-preset-stage-0 --dev`
 
    ​
 
@@ -222,7 +222,7 @@
        }
    ```
 
-   修改`src/inde.js`
+   修改`src/index.js`
 
    ```js
     /*使用es6的箭头函数*/
@@ -2171,6 +2171,7 @@ module.exports = merge(commonConfig, {
 先来说说[babel-plugin-transform-runtime](https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-runtime)
 
 > 在转换 ES2015 语法为 ECMAScript 5 的语法时，babel 会需要一些辅助函数，例如 _extend。babel 默认会将这些辅助函数内联到每一个 js 文件里，这样文件多的时候，项目就会很大。
+
 
 
 > 所以 babel 提供了 transform-runtime 来将这些辅助函数“搬”到一个单独的模块 babel-runtime 中，这样做能减小项目文件的大小。
