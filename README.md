@@ -193,7 +193,7 @@
    ```json
     {
       "presets": [
-        "es2015",
+        "env",
         "react",
         "stage-0"
       ],
@@ -2171,7 +2171,6 @@ module.exports = merge(commonConfig, {
 先来说说[babel-plugin-transform-runtime](https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-runtime)
 
 > 在转换 ES2015 语法为 ECMAScript 5 的语法时，babel 会需要一些辅助函数，例如 _extend。babel 默认会将这些辅助函数内联到每一个 js 文件里，这样文件多的时候，项目就会很大。
-
 
 
 > 所以 babel 提供了 transform-runtime 来将这些辅助函数“搬”到一个单独的模块 babel-runtime 中，这样做能减小项目文件的大小。
